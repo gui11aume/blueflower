@@ -20,7 +20,8 @@ class CellCrawler(object):
       self.decoy = BrowserDecoy()
       self.visited = set([])
 
-   def start(self, url="current", headers={'Host': 'www.cell.com'}):
+   def start( self, url = "current", headers = {'Host': 'www.cell.com'},
+         verbose = True):
       """Start crawling by getting the content of the current issue.
       Take a cookie as we go and initiate recursive crawling.
 
@@ -30,6 +31,9 @@ class CellCrawler(object):
       # Instantiate a browser decoy.
       full_url = self.BASE_URL + url
       self.decoy.connect(full_url, headers)
+
+      if verbose:
+         sys.stderr.write('started at %s\n' % full_url)
 
       # Get the url to previous issue.
       to_previous_issue = re.findall(self.PREV_NEXT, self.decoy.read())
@@ -43,21 +47,30 @@ class CellCrawler(object):
       # Crawl!
       self.crawl(
           url_list = to_previous_issue,
-          headers = headers
+          headers = headers,
+          verbose = verbose
       )
 
-   def crawl(self, url_list, headers):
+   def crawl(self, url_list, headers, verbose=True):
 
       # Skip visited urls.
       urls_to_visit = set(url_list).difference(self.visited)
 
       for url in urls_to_visit:
+
+         if verbose:
+            sys.stderr.write('connecting to %s\n' % (self.BASE_URL + url))
+
          # Connect.
          self.decoy.connect(self.BASE_URL + url, headers)
 
          # Get content and section of full articles.
          content = self.decoy.read()
-         articles = re.search(self.ARTICLES, content, re.S).group()
+         articles_found = re.search(self.ARTICLES, content, re.S)
+         if articles_found:
+            articles = articles_found.group()
+         else:
+            articles = ''
 
          # Now grep a couple of links.
          to_prev_next = re.findall(self.PREV_NEXT, content)
