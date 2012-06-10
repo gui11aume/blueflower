@@ -1,0 +1,6 @@
+Welcome to blueflower!
+
+At the heart of the project lies the BrowserDecoy class. For the moment, this is not required, as www.cell.com does not block crawlers. This will turn out useful later.
+
+To get started you can call the first script from the command line.
+$ python fetch_urls_full_text.py > all_links_to_full_text.txt
