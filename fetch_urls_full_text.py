@@ -2,6 +2,7 @@
 
 import re
 import sys
+import json
 
 from datetime import datetime as dt
 from BrowserDecoy import BrowserDecoy
@@ -9,7 +10,7 @@ from BeautifulSoup import BeautifulSoup
 
 def remove_JS(string):
    """Strip JavaScript snippets from string."""
-   return re.sub('<script>.*?</script>', '', string, re.S)
+   return re.sub('<script.*?</script>', '', string, re.S)
 
 class CellCrawler(object):
    """A crawler to retrive the links to the articles of Cell."""
@@ -65,26 +66,32 @@ class CellCrawler(object):
 
       for url in urls_to_visit:
 
+         if verbose:
+            sys.stderr.write(self.BASE_URL + url + '\n')
+
          # Connect.
-         self.decoy.connect(self.BASE_URL + url, headers)
+         retries = 0
+         while retries < 3:
+            # Give the conncetion 3 tries and then give up.
+            try:
+               self.decoy.connect(self.BASE_URL + url, headers)
+            except:
+               retries += 1
+               continue
+            else:
+               break
 
          # Get content and section of full articles.
          content = remove_JS(self.decoy.read())
          date_match = re.search(self.DATE, content).groups()
          date = dt.strptime(date_match[0], '%d %B %Y')
 
-         if verbose:
-            sys.stderr.write('connecting to %s' % (self.BASE_URL + url))
-            sys.stderr.write(' (%s)\n' % date.strftime('%B %d, %Y'))
-
          if date > self.SWITCH_TIME:
             # Before SWITCH_TIME (6 May 2005) research articles
             # are at end of page, and separated from the rest.
             BS = BeautifulSoup(content)
-            try:
-               articles = BS.find('h3', attrs={'id': 'Articles'}).text
-            except AttributeError:
-               articles = ''
+            article_tags = BS.findAll(attrs={'class': 'article'})
+            articles = '\n'.join([str(tag) for tag in article_tags])
          else:
             # Before SWITCH_TIME (6 May 2005) there is no separation
             # between the different types of articles.
@@ -94,13 +101,12 @@ class CellCrawler(object):
          # Now grep a couple of links.
          to_prev_next = re.findall(self.PREV_NEXT, content)
          to_pdf = re.findall(self.PDF, articles)
-         if to_pdf:
-            # Grab the pdfs if present.
-            self.out.write('"%s": %s,\n' % (url, str(to_pdf)))
-         else:
-            # Otherwise grab links to full text.
-            to_full_text = re.findall(self.FULL_TEXT, articles)
-            self.out.write('"%s": %s,\n' % (url, str(to_full_text)))
+         to_full = re.findall(self.FULL_TEXT, articles)
+
+         # Dump.
+         self.out.write('"%s": ' % url)
+         json.dump([to_pdf, to_full], self.out)
+         self.out.write(',\n')
 
          # Add url to visited and update referer...
          self.visited.add(url)
