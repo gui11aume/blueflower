@@ -17,8 +17,8 @@ class CellCrawler(object):
 
    # Regular expressions used for crawling.
    BASE_URL = 'http://www.cell.com/'
-   PREV_NEXT = 'href="/(issue?[^"]+)'
-   FULL_TEXT = 'href="/(fulltext/[^"]+)'
+   PREV_NEXT = '"/(issue\?pii[^"]+)'
+   FULL_TEXT = '"/(fulltext/[^"]+)'
    PDF = 'href="(http://download.cell.com/pdf/[^"]+.pdf)"'
    DATE = '<title>.*, (.*)</title>'
    SWITCH_TIME = dt(2005, 5, 6, 0, 0)
