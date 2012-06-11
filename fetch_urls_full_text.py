@@ -75,20 +75,18 @@ class CellCrawler(object):
             # Give the conncetion 3 tries and then give up.
             try:
                self.decoy.connect(self.BASE_URL + url, headers)
+               content = remove_JS(self.decoy.read())
+               date_match = re.search(self.DATE, content).groups()
+               date = dt.strptime(date_match[0], '%d %B %Y')
             except:
                retries += 1
                continue
             else:
                break
 
-         # Get content and section of full articles.
-         content = remove_JS(self.decoy.read())
-         date_match = re.search(self.DATE, content).groups()
-         date = dt.strptime(date_match[0], '%d %B %Y')
-
          if date > self.SWITCH_TIME:
-            # Before SWITCH_TIME (6 May 2005) research articles
-            # are at end of page, and separated from the rest.
+            # After SWITCH_TIME (6 May 2005), research articles
+            # have the 'article' class.
             BS = BeautifulSoup(content)
             article_tags = BS.findAll(attrs={'class': 'article'})
             articles = '\n'.join([str(tag) for tag in article_tags])
