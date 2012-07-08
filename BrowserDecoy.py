@@ -3,6 +3,8 @@
 import urllib2
 import cookielib
 
+from random import Random
+from time import sleep
 from gzip import GzipFile
 from StringIO import StringIO
 
@@ -33,7 +35,8 @@ class BrowserDecoy(object):
 
    # Base request headers for HTTP connection.
    base_headers = {
-       'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+       'Accept': 'text/html,application/xhtml+xml,'\
+                 'application/xml;q=0.9,*/*;q=0.8',
        'Accept-Charset': 'ISO-8859-1,utf-8;q=0.7,*;q=0.3',
        'Accept-Encoding': 'gzip,deflate,sdch',
        'Accept-Language': 'en-US,en;q=0.8,fr;q=0.6',
@@ -42,12 +45,13 @@ class BrowserDecoy(object):
 
    # User-Agent headers for different browsers.
    user_agent = {
-      'chrome': 'Mozilla/5.0 (X11; Linux i686) AppleWebKit/535.19 (KHTML, like Gecko) Ubuntu/12.04 Chromium/18.0.1025.151 Chrome/18.0.1025.151 Safari/535.19',
-      'firefox': 'Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:13.0) Gecko/20100101 Firefox/13.0',
+      'chrome':  'Mozilla/5.0 (X11; Linux i686) AppleWebKit/535.19 ' \
+                 '(KHTML, like Gecko) Ubuntu/12.04 '\
+                 'Chromium/18.0.1025.151 Chrome/18.0.1025.151 '\
+                 'Safari/535.19',
+      'firefox': 'Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:13.0) '\
+                 'Gecko/20100101 Firefox/13.0',
    }
-
-# 'Referer': 'http://www.cell.com/current'
-# 'Host': 'www.cell.com',
 
    def __init__(self, browser="chrome"):
       """Set User-Agent header to fit given browser."""
@@ -56,7 +60,8 @@ class BrowserDecoy(object):
           'User-Agent': self.user_agent[browser],
       })
 
-   def connect(self, URL, headers):
+
+   def connect(self, URL, headers={}):
       """Connect with given headers to given URL.
 
       ARGUMENTS:
@@ -87,3 +92,12 @@ class BrowserDecoy(object):
    def get_cookie_items(self):
       """Return cookies of current connection as (key,value) pair."""
       return [(cookie.name, cookie.value) for cookie in self.cookies]
+
+
+   def random_sleep(self, typical=5):
+      """Sleep a random number of seconds (inter-request time).
+      The exponential distribution is chosen because it produces
+      outliers."""
+      rtime = 2 + 2*Random().random() + Random().expovariate(1.0/typical)
+      sleep(rtime)
+      return rtime
